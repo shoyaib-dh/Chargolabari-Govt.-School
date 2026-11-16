@@ -74,13 +74,17 @@ export function AdminLoginPage() {
       const host = typeof window !== 'undefined' ? window.location.hostname : '';
 
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-        setError('Google লগইন পপআপটি বন্ধ করা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
+        setShowOpenNewTabHint(true);
+        setError(
+          `Google লগইন পপআপটি বন্ধ হয়ে গেছে (${code})। প্রিভিউ আইফ্রেমের ভেতরে সমস্যা হলে নিচের লিংক থেকে নতুন ট্যাবে খুলে লগইন করুন।`
+        );
       } else if (code === 'auth/popup-blocked') {
         setShowOpenNewTabHint(true);
         setError(
-          'ব্রাউজার বা প্রিভিউ আইফ্রেম Google লগইন পপআপটি ব্লক করেছে (auth/popup-blocked)। অনুগ্রহ করে ব্রাউজারে Pop-ups অনুমতি দিন অথবা নিচের লিংক থেকে নতুন ট্যাবে ওয়েবসাইটটি খুলে লগইন করুন।'
+          'ব্রাউজার বা প্রিভিউ আইফ্রেম Google লগইন পপআপটি ব্লক করেছে (auth/popup-blocked)। ব্রাউজারে Pop-ups অনুমতি দিন অথবা নিচের লিংক থেকে নতুন ট্যাবে ওয়েবসাইটটি খুলে লগইন করুন।'
         );
       } else if (code === 'auth/unauthorized-domain') {
+        setShowOpenNewTabHint(true);
         setError(
           `বর্তমান ডোমেইনটি (${host}) Firebase-এ অনুমোদিত নয় (auth/unauthorized-domain)। Firebase Console → Authentication → Settings → Authorized domains-এ "${host}" যোগ করুন।`
         );
@@ -89,13 +93,14 @@ export function AdminLoginPage() {
           'Firebase Console-এ Google Sign-In প্রোভাইডার চালু নেই (auth/operation-not-allowed)। Firebase Console → Authentication → Sign-in method → Add new provider থেকে Google সক্রিয় করে Save করুন।'
         );
       } else if (code === 'auth/network-request-failed') {
+        setShowOpenNewTabHint(true);
         setError(
           'নেটওয়ার্ক বা ব্রাউজার এক্সটেনশনের কারণে Google সার্ভারের সাথে সংযোগ বিচ্ছিন্ন হয়েছে (auth/network-request-failed)। অনুগ্রহ করে ইন্টারনেট সংযোগ বা অ্যাড-ব্লকার পরীক্ষা করুন।'
         );
       } else {
         setShowOpenNewTabHint(true);
         setError(
-          `Google লগইনে সমস্যা হয়েছে (${code || 'unknown'})। ${rawMsg || 'অনুগ্রহ করে নতুন ট্যাবে খুলে অথবা Email/Password দিয়ে চেষ্টা করুন।'}`
+          `Google লগইন ত্রুটি (${code || 'unknown'}): ${rawMsg || 'অনুগ্রহ করে নতুন ট্যাবে খুলে আবার চেষ্টা করুন।'}`
         );
       }
     } finally {
@@ -126,7 +131,7 @@ export function AdminLoginPage() {
         try {
           await sendEmailVerification(cred.user);
           setInfoMessage(
-            `অ্যাকাউন্ট তৈরি হয়েছে এবং ${resolvedEmail} ঠিকানায় একটি ভেরিফিকেশন ইমেইল পাঠানো হয়েছে। ইনবক্স বা স্প্যাম ফোল্ডার থেকে লিংকে ক্লিক করে নিচের "ভেরিফাই করেছি — ড্যাশবোর্ডে প্রবেশ করুন" বাটনে চাপ দিন।`
+            `অ্যাকাউন্ট তৈরি হয়েছে এবং ${resolvedEmail} ঠিকানায় একটি ভেরিফিকেশন ইমেইল পাঠানো হয়েছে। ইনবক্স বা স্প্যাম ফোল্ডার থেকে লিংকে ক্লিক করে নিচের "ভেরিফাই করেছি — প্রবেশ করুন" বাটনে চাপ দিন।`
           );
         } catch {
           setInfoMessage(
@@ -150,7 +155,7 @@ export function AdminLoginPage() {
       } else if (code === 'auth/email-already-in-use') {
         setCredentialAction('login');
         setError(
-          'এই ইমেইলে ইতিমধ্যেই একটি অ্যাকাউন্ট রয়েছে (auth/email-already-in-use)। আপনার পাসওয়ার্ড দিয়ে লগইন করুন, অথবা ভুলে গেলে "পাসওয়ার্ড সেট / ভুলে গেছেন?" বাটনে ক্লিক করে রিসেট ইমেইল পাঠান।'
+          'এই ইমেইলে ইতিমধ্যেই একটি অ্যাকাউন্ট রয়েছে (auth/email-already-in-use)। আপনার পাসওয়ার্ড দিয়ে লগইন করুন, অথবা ভুলে গেলে "পাসওয়ার্ড ভুলে গেছেন?" বাটনে ক্লিক করে রিসেট ইমেইল পাঠান।'
         );
       } else if (
         code === 'auth/invalid-credential' ||
@@ -158,7 +163,7 @@ export function AdminLoginPage() {
         code === 'auth/wrong-password'
       ) {
         setError(
-          `ইউজারনেম/ইমেইল বা পাসওয়ার্ড মেলেনি (${code})। আপনি যদি এখনো এই ইমেইলের জন্য পাসওয়ার্ড অ্যাকাউন্ট তৈরি না করে থাকেন, তবে নিচের "প্রথমবার পাসওয়ার্ড অ্যাকাউন্ট তৈরি করুন" অপশনে ক্লিক করে আপনার পছন্দের পাসওয়ার্ড সেট করুন।`
+          `ইউজারনেম/ইমেইল বা পাসওয়ার্ড মেলেনি (${code})। আপনি যদি এখনো পাসওয়ার্ড অ্যাকাউন্ট তৈরি না করে থাকেন, তবে উপরের "প্রথমবার পাসওয়ার্ড সেট করুন" বাটনে ক্লিক করে নতুন পাসওয়ার্ড তৈরি করুন।`
         );
       } else if (code === 'auth/weak-password') {
         setError('পাসওয়ার্ডটি খুবই দুর্বল (auth/weak-password)। অনুগ্রহ করে কমপক্ষে ৬ অক্ষরের শক্তিশালী পাসওয়ার্ড দিন।');
@@ -180,12 +185,12 @@ export function AdminLoginPage() {
     try {
       await sendPasswordResetEmail(auth, resolvedEmail);
       setInfoMessage(
-        `${resolvedEmail} ঠিকানায় পাসওয়ার্ড সেট/রিসেট ইমেইল পাঠানো হয়েছে (যদি অ্যাকাউন্টটি আগে থেকে তৈরি থাকে)। ইনবক্স/স্প্যাম ফোল্ডার দেখুন; অ্যাকাউন্ট না থাকলে "প্রথমবার পাসওয়ার্ড অ্যাকাউন্ট তৈরি করুন" ব্যবহার করুন।`
+        `${resolvedEmail} ঠিকানায় পাসওয়ার্ড রিসেট রিকোয়েস্ট পাঠানো হয়েছে। তবে আগে থেকে অ্যাকাউন্ট তৈরি না থাকলে Firebase কোনো ইমেইল পাঠায় না — সেক্ষেত্রে উপরের "প্রথমবার পাসওয়ার্ড সেট করুন" অপশন ব্যবহার করে অ্যাকাউন্ট তৈরি করুন।`
       );
     } catch (err) {
       const code = (err as { code?: string })?.code || '';
       setError(
-        `পাসওয়ার্ড রিসেট ইমেইল পাঠানো যায়নি (${code || 'error'})। আগে থেকে পাসওয়ার্ড অ্যাকাউন্ট না থাকলে "প্রথমবার পাসওয়ার্ড অ্যাকাউন্ট তৈরি করুন" থেকে নতুন পাসওয়ার্ড সেট করুন।`
+        `পাসওয়ার্ড রিসেট ইমেইল পাঠানো যায়নি (${code || 'error'})। আগে থেকে পাসওয়ার্ড অ্যাকাউন্ট না থাকলে "প্রথমবার পাসওয়ার্ড সেট করুন" অপশন ব্যবহার করুন।`
       );
     } finally {
       setLoading(false);
@@ -353,6 +358,38 @@ export function AdminLoginPage() {
 
           {mode === 'credentials' ? (
             <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-2 p-1 bg-blue-50/70 border border-blue-100 rounded-lg text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCredentialAction('login');
+                    setError('');
+                    setInfoMessage('');
+                  }}
+                  className={`py-1.5 px-2 rounded-md transition-colors ${
+                    credentialAction === 'login'
+                      ? 'bg-blue-900 text-white'
+                      : 'text-blue-900 hover:bg-blue-100/70'
+                  }`}
+                >
+                  লগইন করুন
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCredentialAction('register');
+                    setError('');
+                    setInfoMessage('');
+                  }}
+                  className={`py-1.5 px-2 rounded-md transition-colors ${
+                    credentialAction === 'register'
+                      ? 'bg-emerald-700 text-white'
+                      : 'text-emerald-800 hover:bg-emerald-100/70'
+                  }`}
+                >
+                  প্রথমবার পাসওয়ার্ড সেট করুন
+                </button>
+              </div>
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-700">
                   অ্যাডমিন ইউজারনেম অথবা ইমেইল
