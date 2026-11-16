@@ -1,0 +1,663 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Primitive Helpers ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isBootstrapAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'sheakhsohel307@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrapAdmin() || (
+        isVerifiedUser() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isActive == true
+      );
+    }
+
+    function isValidStr(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isValidOptStr(data, field, maxLen) {
+      return !(field in data) || (data[field] is string && data[field].size() <= maxLen);
+    }
+
+    function isValidOptBool(data, field) {
+      return !(field in data) || data[field] is bool;
+    }
+
+    // --- Entity Validation Helpers ---
+    function isValidSiteSettings(data) {
+      return data.keys().hasAll(['schoolName', 'address', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'schoolName', 'address', 'phone', 'email', 'logoUrl', 'faviconUrl',
+          'headerNotice', 'footerText', 'facebookUrl', 'youtubeUrl', 'mapEmbedUrl',
+          'seoTitle', 'seoDescription', 'statStudents', 'statTeachers',
+          'statClassrooms', 'statEstablishedYear', 'showWelcomeSection',
+          'showStatsSection', 'showHeadmasterSection', 'showFeaturesSection',
+          'showTeachersSection', 'showNoticesSection', 'showGallerySection',
+          'showActivitiesSection', 'isDemoData', 'createdAt', 'updatedAt'
+        ])
+        && isValidStr(data.schoolName, 2, 200)
+        && isValidStr(data.address, 2, 300)
+        && isValidOptStr(data, 'phone', 50)
+        && isValidOptStr(data, 'email', 150)
+        && isValidOptStr(data, 'logoUrl', 100000)
+        && isValidOptStr(data, 'faviconUrl', 100000)
+        && isValidOptStr(data, 'headerNotice', 400)
+        && isValidOptStr(data, 'footerText', 500)
+        && isValidOptStr(data, 'facebookUrl', 300)
+        && isValidOptStr(data, 'youtubeUrl', 300)
+        && isValidOptStr(data, 'mapEmbedUrl', 1000)
+        && isValidOptStr(data, 'seoTitle', 160)
+        && isValidOptStr(data, 'seoDescription', 320)
+        && isValidOptStr(data, 'statStudents', 40)
+        && isValidOptStr(data, 'statTeachers', 40)
+        && isValidOptStr(data, 'statClassrooms', 40)
+        && isValidOptStr(data, 'statEstablishedYear', 40)
+        && isValidOptBool(data, 'showWelcomeSection')
+        && isValidOptBool(data, 'showStatsSection')
+        && isValidOptBool(data, 'showHeadmasterSection')
+        && isValidOptBool(data, 'showFeaturesSection')
+        && isValidOptBool(data, 'showTeachersSection')
+        && isValidOptBool(data, 'showNoticesSection')
+        && isValidOptBool(data, 'showGallerySection')
+        && isValidOptBool(data, 'showActivitiesSection')
+        && isValidOptBool(data, 'isDemoData')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidSchoolInfo(data) {
+      return data.keys().hasAll(['history', 'introduction', 'headmasterName', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'history', 'introduction', 'establishmentHistory', 'aimsAndObjectives',
+          'missionAndVision', 'infrastructure', 'facilities', 'achievements',
+          'nationalDays', 'headmasterName', 'headmasterDesignation',
+          'headmasterQualification', 'headmasterPhotoUrl', 'headmasterMessage',
+          'headmasterQuote', 'headmasterSignature', 'welcomeImageUrl',
+          'isDemoContent', 'createdAt', 'updatedAt'
+        ])
+        && isValidStr(data.history, 1, 8000)
+        && isValidStr(data.introduction, 1, 8000)
+        && isValidOptStr(data, 'establishmentHistory', 8000)
+        && isValidOptStr(data, 'aimsAndObjectives', 8000)
+        && isValidOptStr(data, 'missionAndVision', 8000)
+        && isValidOptStr(data, 'infrastructure', 8000)
+        && isValidOptStr(data, 'facilities', 8000)
+        && isValidOptStr(data, 'achievements', 8000)
+        && isValidOptStr(data, 'nationalDays', 8000)
+        && isValidStr(data.headmasterName, 1, 150)
+        && isValidOptStr(data, 'headmasterDesignation', 150)
+        && isValidOptStr(data, 'headmasterQualification', 200)
+        && isValidOptStr(data, 'headmasterPhotoUrl', 150000)
+        && isValidOptStr(data, 'headmasterMessage', 5000)
+        && isValidOptStr(data, 'headmasterQuote', 600)
+        && isValidOptStr(data, 'headmasterSignature', 120)
+        && isValidOptStr(data, 'welcomeImageUrl', 150000)
+        && isValidOptBool(data, 'isDemoContent')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidSlider(data) {
+      return data.keys().hasAll(['title', 'imageUrl', 'order', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'title', 'description', 'imageUrl', 'buttonText', 'buttonLink',
+          'order', 'isActive', 'isDemo', 'createdAt', 'updatedAt'
+        ])
+        && isValidStr(data.title, 1, 200)
+        && isValidOptStr(data, 'description', 500)
+        && isValidStr(data.imageUrl, 1, 200000)
+        && isValidOptStr(data, 'buttonText', 60)
+        && isValidOptStr(data, 'buttonLink', 200)
+        && data.order is number
+        && data.isActive is bool
+        && isValidOptBool(data, 'isDemo')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTeacher(data) {
+      return data.keys().hasAll(['name', 'designation', 'category', 'order', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'name', 'designation', 'category', 'qualification', 'subject',
+          'joiningDate', 'experience', 'shortBio', 'statement', 'quote',
+          'photoUrl', 'order', 'isActive', 'isDemo', 'createdAt', 'updatedAt'
+        ])
+        && isValidStr(data.name, 1, 150)
+        && isValidStr(data.designation, 1, 150)
+        && data.category in ['প্রধান শিক্ষক', 'সহকারী শিক্ষক', 'অন্যান্য শিক্ষক']
+        && isValidOptStr(data, 'qualification', 250)
+        && isValidOptStr(data, 'subject', 150)
+        && isValidOptStr(data, 'joiningDate', 60)
+        && isValidOptStr(data, 'experience', 100)
+        && isValidOptStr(data, 'shortBio', 1500)
+        && isValidOptStr(data, 'statement', 3000)
+        && isValidOptStr(data, 'quote', 500)
+        && isValidOptStr(data, 'photoUrl', 200000)
+        && data.order is number
+        && data.isActive is bool
+        && isValidOptBool(data, 'isDemo')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidStudentClass(data) {
+      return data.keys().hasAll(['className', 'totalStudents', 'order', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'className', 'totalStudents', 'boysCount', 'girlsCount',
+          'classTeacher', 'academicYear', 'order', 'isActive', 'isDemo',
+          'createdAt', 'updatedAt'
+        ])
+        && isValidStr(data.className, 1, 80)
+        && data.totalStudents is number && data.totalStudents >= 0 && data.totalStudents <= 5000
+        && (!('boysCount' in data) || (data.boysCount is number && data.boysCount >= 0))
+        && (!('girlsCount' in data) || (data.girlsCount is number && data.girlsCount >= 0))
+        && isValidOptStr(data, 'classTeacher', 150)
+        && isValidOptStr(data, 'academicYear', 30)
+        && data.order is number
+        && data.isActive is bool
+        && isValidOptBool(data, 'isDemo')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidStudent(data) {
+      return data.keys().hasAll(['name', 'rollNumber', 'className', 'isPublicApproved', 'guardianConsent', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'name', 'rollNumber', 'className', 'section', 'academicYear',
+          'guardianName', 'photoUrl', 'isPublicApproved', 'guardianConsent',
+          'isActive', 'isDemo', 'createdAt', 'updatedAt'
+        ])
+        && isValidStr(data.name, 1, 150)
+        && isValidStr(data.rollNumber, 1, 40)
+        && isValidStr(data.className, 1, 80)
+        && isValidOptStr(data, 'section', 40)
+        && isValidOptStr(data, 'academicYear', 30)
+        && isValidOptStr(data, 'guardianName', 150)
+        && isValidOptStr(data, 'photoUrl', 150000)
+        && data.isPublicApproved is bool
+        && data.guardianConsent is bool
+        && data.isActive is bool
+        && isValidOptBool(data, 'isDemo')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAcademic(data) {
+      return data.keys().hasAll(['title', 'category', 'fileType', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'title', 'category', 'className', 'academicYear', 'description',
+          'fileUrl', 'fileType', 'isActive', 'isDemo', 'createdAt', 'updatedAt'
+        ])
+        && isValidStr(data.title, 1, 200)
+        && isValidStr(data.category, 1, 80)
+        && isValidOptStr(data, 'className', 80)
+        && isValidOptStr(data, 'academicYear', 30)
+        && isValidOptStr(data, 'description', 3000)
+        && isValidOptStr(data, 'fileUrl', 400000)
+        && data.fileType in ['pdf', 'image', 'doc', 'link', 'none']
+        && data.isActive is bool
+        && isValidOptBool(data, 'isDemo')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidNotice(data) {
+      return data.keys().hasAll(['title', 'category', 'publishDate', 'description', 'attachmentType', 'isNew', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'title', 'category', 'publishDate', 'description', 'attachmentUrl',
+          'attachmentType', 'isNew', 'isActive', 'isDemo', 'createdAt', 'updatedAt'
+        ])
+        && isValidStr(data.title, 1, 250)
+        && isValidStr(data.category, 1, 80)
+        && isValidStr(data.publishDate, 1, 50)
+        && isValidStr(data.description, 1, 8000)
+        && isValidOptStr(data, 'attachmentUrl', 400000)
+        && data.attachmentType in ['none', 'pdf', 'image']
+        && data.isNew is bool
+        && data.isActive is bool
+        && isValidOptBool(data, 'isDemo')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidResult(data) {
+      return data.keys().hasAll(['title', 'className', 'academicYear', 'examName', 'publishDate', 'fileType', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'title', 'className', 'academicYear', 'examName', 'publishDate',
+          'fileUrl', 'fileType', 'summary', 'isActive', 'isDemo',
+          'createdAt', 'updatedAt'
+        ])
+        && isValidStr(data.title, 1, 200)
+        && isValidStr(data.className, 1, 80)
+        && isValidStr(data.academicYear, 1, 30)
+        && isValidStr(data.examName, 1, 120)
+        && isValidStr(data.publishDate, 1, 50)
+        && isValidOptStr(data, 'fileUrl', 400000)
+        && data.fileType in ['pdf', 'excel', 'link']
+        && isValidOptStr(data, 'summary', 2000)
+        && data.isActive is bool
+        && isValidOptBool(data, 'isDemo')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidGalleryPhoto(data) {
+      return data.keys().hasAll(['title', 'category', 'imageUrl', 'order', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'title', 'caption', 'category', 'imageUrl', 'order', 'isActive',
+          'isDemo', 'createdAt', 'updatedAt'
+        ])
+        && isValidStr(data.title, 1, 200)
+        && isValidOptStr(data, 'caption', 500)
+        && isValidStr(data.category, 1, 100)
+        && isValidStr(data.imageUrl, 1, 250000)
+        && data.order is number
+        && data.isActive is bool
+        && isValidOptBool(data, 'isDemo')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidGalleryVideo(data) {
+      return data.keys().hasAll(['title', 'category', 'videoUrl', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'title', 'category', 'videoUrl', 'thumbnailUrl', 'description',
+          'isActive', 'isDemo', 'createdAt', 'updatedAt'
+        ])
+        && isValidStr(data.title, 1, 200)
+        && isValidStr(data.category, 1, 100)
+        && isValidStr(data.videoUrl, 1, 500)
+        && isValidOptStr(data, 'thumbnailUrl', 200000)
+        && isValidOptStr(data, 'description', 1000)
+        && data.isActive is bool
+        && isValidOptBool(data, 'isDemo')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidNews(data) {
+      return data.keys().hasAll(['title', 'category', 'publishDate', 'content', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'title', 'category', 'publishDate', 'author', 'featuredImageUrl',
+          'summary', 'content', 'isActive', 'isDemo', 'createdAt', 'updatedAt'
+        ])
+        && isValidStr(data.title, 1, 250)
+        && isValidStr(data.category, 1, 80)
+        && isValidStr(data.publishDate, 1, 50)
+        && isValidOptStr(data, 'author', 120)
+        && isValidOptStr(data, 'featuredImageUrl', 250000)
+        && isValidOptStr(data, 'summary', 600)
+        && isValidStr(data.content, 1, 15000)
+        && data.isActive is bool
+        && isValidOptBool(data, 'isDemo')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPage(data) {
+      return data.keys().hasAll(['slug', 'title', 'content', 'isActive', 'order', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'slug', 'title', 'subtitle', 'content', 'isActive', 'order',
+          'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.slug)
+        && isValidStr(data.title, 1, 200)
+        && isValidOptStr(data, 'subtitle', 300)
+        && isValidStr(data.content, 1, 15000)
+        && data.isActive is bool
+        && data.order is number
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMenu(data) {
+      return data.keys().hasAll(['label', 'path', 'group', 'order', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'label', 'path', 'group', 'order', 'isActive', 'createdAt', 'updatedAt'
+        ])
+        && isValidStr(data.label, 1, 80)
+        && isValidStr(data.path, 1, 150)
+        && data.group in ['primary', 'more']
+        && data.order is number
+        && data.isActive is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidContactMessage(data) {
+      return data.keys().hasAll(['senderName', 'subject', 'message', 'status', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'senderName', 'phone', 'email', 'subject', 'message',
+          'status', 'createdAt', 'updatedAt'
+        ])
+        && isValidStr(data.senderName, 1, 150)
+        && isValidOptStr(data, 'phone', 40)
+        && isValidOptStr(data, 'email', 150)
+        && isValidStr(data.subject, 1, 200)
+        && isValidStr(data.message, 1, 4000)
+        && data.status in ['unread', 'read', 'replied']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAdminUser(data) {
+      return data.keys().hasAll(['uid', 'username', 'email', 'role', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'uid', 'username', 'email', 'displayName', 'role', 'isActive',
+          'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.uid)
+        && isValidStr(data.username, 2, 60)
+        && isValidStr(data.email, 3, 150)
+        && isValidOptStr(data, 'displayName', 150)
+        && data.role in ['super_admin', 'admin', 'editor']
+        && data.isActive is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAdminInvite(data) {
+      return data.keys().hasAll(['username', 'email', 'role', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'username', 'email', 'role', 'isActive', 'createdAt', 'updatedAt'
+        ])
+        && isValidStr(data.username, 2, 60)
+        && isValidStr(data.email, 3, 150)
+        && data.role in ['super_admin', 'admin', 'editor']
+        && data.isActive is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+
+    match /settings/{settingId} {
+      allow get: if isValidId(settingId);
+      allow list: if resource.data.schoolName is string;
+      allow create: if isAdmin() && isValidId(settingId) && isValidSiteSettings(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(settingId) && isValidSiteSettings(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'schoolName', 'address', 'phone', 'email', 'logoUrl', 'faviconUrl',
+          'headerNotice', 'footerText', 'facebookUrl', 'youtubeUrl', 'mapEmbedUrl',
+          'seoTitle', 'seoDescription', 'statStudents', 'statTeachers',
+          'statClassrooms', 'statEstablishedYear', 'showWelcomeSection',
+          'showStatsSection', 'showHeadmasterSection', 'showFeaturesSection',
+          'showTeachersSection', 'showNoticesSection', 'showGallerySection',
+          'showActivitiesSection', 'isDemoData', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(settingId);
+    }
+
+    match /schoolInfo/{docId} {
+      allow get: if isValidId(docId);
+      allow list: if resource.data.headmasterName is string;
+      allow create: if isAdmin() && isValidId(docId) && isValidSchoolInfo(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(docId) && isValidSchoolInfo(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'history', 'introduction', 'establishmentHistory', 'aimsAndObjectives',
+          'missionAndVision', 'infrastructure', 'facilities', 'achievements',
+          'nationalDays', 'headmasterName', 'headmasterDesignation',
+          'headmasterQualification', 'headmasterPhotoUrl', 'headmasterMessage',
+          'headmasterQuote', 'headmasterSignature', 'welcomeImageUrl',
+          'isDemoContent', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(docId);
+    }
+
+    match /sliders/{sliderId} {
+      allow get: if isValidId(sliderId) && (resource.data.isActive == true || isAdmin());
+      allow list: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && isValidId(sliderId) && isValidSlider(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(sliderId) && isValidSlider(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'description', 'imageUrl', 'buttonText', 'buttonLink',
+          'order', 'isActive', 'isDemo', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(sliderId);
+    }
+
+    match /teachers/{teacherId} {
+      allow get: if isValidId(teacherId) && (resource.data.isActive == true || isAdmin());
+      allow list: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && isValidId(teacherId) && isValidTeacher(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(teacherId) && isValidTeacher(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'designation', 'category', 'qualification', 'subject',
+          'joiningDate', 'experience', 'shortBio', 'statement', 'quote',
+          'photoUrl', 'order', 'isActive', 'isDemo', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(teacherId);
+    }
+
+    match /studentClasses/{classId} {
+      allow get: if isValidId(classId) && (resource.data.isActive == true || isAdmin());
+      allow list: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && isValidId(classId) && isValidStudentClass(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(classId) && isValidStudentClass(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'className', 'totalStudents', 'boysCount', 'girlsCount',
+          'classTeacher', 'academicYear', 'order', 'isActive', 'isDemo', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(classId);
+    }
+
+    match /students/{studentId} {
+      allow get: if isValidId(studentId) && (
+        isAdmin() || (
+          resource.data.isActive == true &&
+          resource.data.isPublicApproved == true &&
+          resource.data.guardianConsent == true
+        )
+      );
+      allow list: if isAdmin() || (
+        resource.data.isActive == true &&
+        resource.data.isPublicApproved == true &&
+        resource.data.guardianConsent == true
+      );
+      allow create: if isAdmin() && isValidId(studentId) && isValidStudent(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(studentId) && isValidStudent(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'rollNumber', 'className', 'section', 'academicYear',
+          'guardianName', 'photoUrl', 'isPublicApproved', 'guardianConsent',
+          'isActive', 'isDemo', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(studentId);
+    }
+
+    match /academics/{academicId} {
+      allow get: if isValidId(academicId) && (resource.data.isActive == true || isAdmin());
+      allow list: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && isValidId(academicId) && isValidAcademic(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(academicId) && isValidAcademic(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'category', 'className', 'academicYear', 'description',
+          'fileUrl', 'fileType', 'isActive', 'isDemo', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(academicId);
+    }
+
+    match /notices/{noticeId} {
+      allow get: if isValidId(noticeId) && (resource.data.isActive == true || isAdmin());
+      allow list: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && isValidId(noticeId) && isValidNotice(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(noticeId) && isValidNotice(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'category', 'publishDate', 'description', 'attachmentUrl',
+          'attachmentType', 'isNew', 'isActive', 'isDemo', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(noticeId);
+    }
+
+    match /results/{resultId} {
+      allow get: if isValidId(resultId) && (resource.data.isActive == true || isAdmin());
+      allow list: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && isValidId(resultId) && isValidResult(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(resultId) && isValidResult(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'className', 'academicYear', 'examName', 'publishDate',
+          'fileUrl', 'fileType', 'summary', 'isActive', 'isDemo', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(resultId);
+    }
+
+    match /galleryPhotos/{photoId} {
+      allow get: if isValidId(photoId) && (resource.data.isActive == true || isAdmin());
+      allow list: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && isValidId(photoId) && isValidGalleryPhoto(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(photoId) && isValidGalleryPhoto(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'caption', 'category', 'imageUrl', 'order', 'isActive',
+          'isDemo', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(photoId);
+    }
+
+    match /galleryVideos/{videoId} {
+      allow get: if isValidId(videoId) && (resource.data.isActive == true || isAdmin());
+      allow list: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && isValidId(videoId) && isValidGalleryVideo(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(videoId) && isValidGalleryVideo(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'category', 'videoUrl', 'thumbnailUrl', 'description',
+          'isActive', 'isDemo', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(videoId);
+    }
+
+    match /news/{newsId} {
+      allow get: if isValidId(newsId) && (resource.data.isActive == true || isAdmin());
+      allow list: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && isValidId(newsId) && isValidNews(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(newsId) && isValidNews(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'category', 'publishDate', 'author', 'featuredImageUrl',
+          'summary', 'content', 'isActive', 'isDemo', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(newsId);
+    }
+
+    match /pages/{pageId} {
+      allow get: if isValidId(pageId) && (resource.data.isActive == true || isAdmin());
+      allow list: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && isValidId(pageId) && isValidPage(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(pageId) && isValidPage(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'slug', 'title', 'subtitle', 'content', 'isActive', 'order', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(pageId);
+    }
+
+    match /menus/{menuId} {
+      allow get: if isValidId(menuId) && (resource.data.isActive == true || isAdmin());
+      allow list: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && isValidId(menuId) && isValidMenu(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(menuId) && isValidMenu(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'label', 'path', 'group', 'order', 'isActive', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(menuId);
+    }
+
+    match /contactMessages/{messageId} {
+      allow get: if isValidId(messageId) && isAdmin();
+      allow list: if isAdmin() && resource.data.status in ['unread', 'read', 'replied'];
+      allow create: if isValidId(messageId) && isValidContactMessage(incoming())
+        && incoming().status == 'unread'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(messageId) && isValidContactMessage(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+      allow delete: if isAdmin() && isValidId(messageId);
+    }
+
+    match /admins/{uid} {
+      allow get: if isValidId(uid) && (isAdmin() || (isVerifiedUser() && request.auth.uid == uid));
+      allow list: if isAdmin() || (isVerifiedUser() && resource.data.uid == request.auth.uid);
+      allow create: if isValidId(uid) && isValidAdminUser(incoming())
+        && incoming().uid == uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (isAdmin() || (isBootstrapAdmin() && request.auth.uid == uid));
+      allow update: if isAdmin() && isValidId(uid) && isValidAdminUser(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'username', 'email', 'displayName', 'role', 'isActive', 'updatedAt'
+        ]);
+      allow delete: if isBootstrapAdmin() && isValidId(uid) && uid != request.auth.uid;
+    }
+
+    match /adminInvites/{inviteId} {
+      allow get: if isValidId(inviteId) && (isAdmin() || (isVerifiedUser() && resource.data.email == request.auth.token.email));
+      allow list: if isAdmin() || (isVerifiedUser() && resource.data.email == request.auth.token.email);
+      allow create: if isAdmin() && isValidId(inviteId) && isValidAdminInvite(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(inviteId) && isValidAdminInvite(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'username', 'email', 'role', 'isActive', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(inviteId);
+    }
+  }
+}

@@ -1,0 +1,408 @@
+{
+  "entities": {
+    "SiteSettings": {
+      "title": "SiteSettings",
+      "description": "Global website configuration, branding, contact details, statistics, and homepage section visibility.",
+      "type": "object",
+      "properties": {
+        "schoolName": { "type": "string", "minLength": 2, "maxLength": 200 },
+        "address": { "type": "string", "minLength": 2, "maxLength": 300 },
+        "phone": { "type": "string", "maxLength": 50 },
+        "email": { "type": "string", "maxLength": 150 },
+        "logoUrl": { "type": "string", "maxLength": 100000 },
+        "faviconUrl": { "type": "string", "maxLength": 100000 },
+        "headerNotice": { "type": "string", "maxLength": 400 },
+        "footerText": { "type": "string", "maxLength": 500 },
+        "facebookUrl": { "type": "string", "maxLength": 300 },
+        "youtubeUrl": { "type": "string", "maxLength": 300 },
+        "mapEmbedUrl": { "type": "string", "maxLength": 1000 },
+        "seoTitle": { "type": "string", "maxLength": 160 },
+        "seoDescription": { "type": "string", "maxLength": 320 },
+        "statStudents": { "type": "string", "maxLength": 40 },
+        "statTeachers": { "type": "string", "maxLength": 40 },
+        "statClassrooms": { "type": "string", "maxLength": 40 },
+        "statEstablishedYear": { "type": "string", "maxLength": 40 },
+        "showWelcomeSection": { "type": "boolean" },
+        "showStatsSection": { "type": "boolean" },
+        "showHeadmasterSection": { "type": "boolean" },
+        "showFeaturesSection": { "type": "boolean" },
+        "showTeachersSection": { "type": "boolean" },
+        "showNoticesSection": { "type": "boolean" },
+        "showGallerySection": { "type": "boolean" },
+        "showActivitiesSection": { "type": "boolean" },
+        "isDemoData": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["schoolName", "address", "createdAt", "updatedAt"]
+    },
+    "SchoolInfo": {
+      "title": "SchoolInfo",
+      "description": "About school 9 editorial sections and headmaster profile message.",
+      "type": "object",
+      "properties": {
+        "history": { "type": "string", "maxLength": 8000 },
+        "introduction": { "type": "string", "maxLength": 8000 },
+        "establishmentHistory": { "type": "string", "maxLength": 8000 },
+        "aimsAndObjectives": { "type": "string", "maxLength": 8000 },
+        "missionAndVision": { "type": "string", "maxLength": 8000 },
+        "infrastructure": { "type": "string", "maxLength": 8000 },
+        "facilities": { "type": "string", "maxLength": 8000 },
+        "achievements": { "type": "string", "maxLength": 8000 },
+        "nationalDays": { "type": "string", "maxLength": 8000 },
+        "headmasterName": { "type": "string", "maxLength": 150 },
+        "headmasterDesignation": { "type": "string", "maxLength": 150 },
+        "headmasterQualification": { "type": "string", "maxLength": 200 },
+        "headmasterPhotoUrl": { "type": "string", "maxLength": 150000 },
+        "headmasterMessage": { "type": "string", "maxLength": 5000 },
+        "headmasterQuote": { "type": "string", "maxLength": 600 },
+        "headmasterSignature": { "type": "string", "maxLength": 120 },
+        "welcomeImageUrl": { "type": "string", "maxLength": 150000 },
+        "isDemoContent": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["history", "introduction", "headmasterName", "createdAt", "updatedAt"]
+    },
+    "SliderItem": {
+      "title": "SliderItem",
+      "description": "Homepage hero slider item.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 500 },
+        "imageUrl": { "type": "string", "minLength": 1, "maxLength": 200000 },
+        "buttonText": { "type": "string", "maxLength": 60 },
+        "buttonLink": { "type": "string", "maxLength": 200 },
+        "order": { "type": "number" },
+        "isActive": { "type": "boolean" },
+        "isDemo": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "imageUrl", "order", "isActive", "createdAt", "updatedAt"]
+    },
+    "Teacher": {
+      "title": "Teacher",
+      "description": "Teacher profile record.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 150 },
+        "designation": { "type": "string", "minLength": 1, "maxLength": 150 },
+        "category": { "type": "string", "enum": ["প্রধান শিক্ষক", "সহকারী শিক্ষক", "অন্যান্য শিক্ষক"] },
+        "qualification": { "type": "string", "maxLength": 250 },
+        "subject": { "type": "string", "maxLength": 150 },
+        "joiningDate": { "type": "string", "maxLength": 60 },
+        "experience": { "type": "string", "maxLength": 100 },
+        "shortBio": { "type": "string", "maxLength": 1500 },
+        "statement": { "type": "string", "maxLength": 3000 },
+        "quote": { "type": "string", "maxLength": 500 },
+        "photoUrl": { "type": "string", "maxLength": 200000 },
+        "order": { "type": "number" },
+        "isActive": { "type": "boolean" },
+        "isDemo": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "designation", "category", "order", "isActive", "createdAt", "updatedAt"]
+    },
+    "StudentClass": {
+      "title": "StudentClass",
+      "description": "Class-level student aggregate statistics (Class 1 to 5).",
+      "type": "object",
+      "properties": {
+        "className": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "totalStudents": { "type": "number" },
+        "boysCount": { "type": "number" },
+        "girlsCount": { "type": "number" },
+        "classTeacher": { "type": "string", "maxLength": 150 },
+        "academicYear": { "type": "string", "maxLength": 30 },
+        "order": { "type": "number" },
+        "isActive": { "type": "boolean" },
+        "isDemo": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["className", "totalStudents", "order", "isActive", "createdAt", "updatedAt"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Individual student record with explicit guardian consent and admin approval gate.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 150 },
+        "rollNumber": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "className": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "section": { "type": "string", "maxLength": 40 },
+        "academicYear": { "type": "string", "maxLength": 30 },
+        "guardianName": { "type": "string", "maxLength": 150 },
+        "photoUrl": { "type": "string", "maxLength": 150000 },
+        "isPublicApproved": { "type": "boolean" },
+        "guardianConsent": { "type": "boolean" },
+        "isActive": { "type": "boolean" },
+        "isDemo": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "rollNumber", "className", "isPublicApproved", "guardianConsent", "isActive", "createdAt", "updatedAt"]
+    },
+    "AcademicItem": {
+      "title": "AcademicItem",
+      "description": "Curriculum, routines, exam schedules, holidays, and co-curricular documents.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "category": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "className": { "type": "string", "maxLength": 80 },
+        "academicYear": { "type": "string", "maxLength": 30 },
+        "description": { "type": "string", "maxLength": 3000 },
+        "fileUrl": { "type": "string", "maxLength": 400000 },
+        "fileType": { "type": "string", "enum": ["pdf", "image", "doc", "link", "none"] },
+        "isActive": { "type": "boolean" },
+        "isDemo": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "category", "fileType", "isActive", "createdAt", "updatedAt"]
+    },
+    "Notice": {
+      "title": "Notice",
+      "description": "Dynamic school notice board record.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 250 },
+        "category": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "publishDate": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "description": { "type": "string", "minLength": 1, "maxLength": 8000 },
+        "attachmentUrl": { "type": "string", "maxLength": 400000 },
+        "attachmentType": { "type": "string", "enum": ["none", "pdf", "image"] },
+        "isNew": { "type": "boolean" },
+        "isActive": { "type": "boolean" },
+        "isDemo": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "category", "publishDate", "description", "attachmentType", "isNew", "isActive", "createdAt", "updatedAt"]
+    },
+    "ResultItem": {
+      "title": "ResultItem",
+      "description": "Exam results by class, year, and exam name with downloadable PDF or Excel file.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "className": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "academicYear": { "type": "string", "minLength": 1, "maxLength": 30 },
+        "examName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "publishDate": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "fileUrl": { "type": "string", "maxLength": 400000 },
+        "fileType": { "type": "string", "enum": ["pdf", "excel", "link"] },
+        "summary": { "type": "string", "maxLength": 2000 },
+        "isActive": { "type": "boolean" },
+        "isDemo": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "className", "academicYear", "examName", "publishDate", "fileType", "isActive", "createdAt", "updatedAt"]
+    },
+    "GalleryPhoto": {
+      "title": "GalleryPhoto",
+      "description": "Categorized photo gallery record.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "caption": { "type": "string", "maxLength": 500 },
+        "category": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "imageUrl": { "type": "string", "minLength": 1, "maxLength": 250000 },
+        "order": { "type": "number" },
+        "isActive": { "type": "boolean" },
+        "isDemo": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "category", "imageUrl", "order", "isActive", "createdAt", "updatedAt"]
+    },
+    "GalleryVideo": {
+      "title": "GalleryVideo",
+      "description": "Video gallery record.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "category": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "videoUrl": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "thumbnailUrl": { "type": "string", "maxLength": 200000 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "isActive": { "type": "boolean" },
+        "isDemo": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "category", "videoUrl", "isActive", "createdAt", "updatedAt"]
+    },
+    "NewsItem": {
+      "title": "NewsItem",
+      "description": "School news and activities article.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 250 },
+        "category": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "publishDate": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "author": { "type": "string", "maxLength": 120 },
+        "featuredImageUrl": { "type": "string", "maxLength": 250000 },
+        "summary": { "type": "string", "maxLength": 600 },
+        "content": { "type": "string", "minLength": 1, "maxLength": 15000 },
+        "isActive": { "type": "boolean" },
+        "isDemo": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "category", "publishDate", "content", "isActive", "createdAt", "updatedAt"]
+    },
+    "CustomPage": {
+      "title": "CustomPage",
+      "description": "Admin-managed custom informational page.",
+      "type": "object",
+      "properties": {
+        "slug": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "subtitle": { "type": "string", "maxLength": 300 },
+        "content": { "type": "string", "minLength": 1, "maxLength": 15000 },
+        "isActive": { "type": "boolean" },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["slug", "title", "content", "isActive", "order", "createdAt", "updatedAt"]
+    },
+    "MenuItem": {
+      "title": "MenuItem",
+      "description": "Navigation menu link item managed from admin.",
+      "type": "object",
+      "properties": {
+        "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "path": { "type": "string", "minLength": 1, "maxLength": 150 },
+        "group": { "type": "string", "enum": ["primary", "more"] },
+        "order": { "type": "number" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["label", "path", "group", "order", "isActive", "createdAt", "updatedAt"]
+    },
+    "ContactMessage": {
+      "title": "ContactMessage",
+      "description": "Public contact form submission stored securely for admin inbox only.",
+      "type": "object",
+      "properties": {
+        "senderName": { "type": "string", "minLength": 1, "maxLength": 150 },
+        "phone": { "type": "string", "maxLength": 40 },
+        "email": { "type": "string", "maxLength": 150 },
+        "subject": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "message": { "type": "string", "minLength": 1, "maxLength": 4000 },
+        "status": { "type": "string", "enum": ["unread", "read", "replied"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderName", "subject", "message", "status", "createdAt", "updatedAt"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Role-based access control profile for school administrators.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "username": { "type": "string", "minLength": 2, "maxLength": 60 },
+        "email": { "type": "string", "minLength": 3, "maxLength": 150 },
+        "displayName": { "type": "string", "maxLength": 150 },
+        "role": { "type": "string", "enum": ["super_admin", "admin", "editor"] },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "username", "email", "role", "isActive", "createdAt", "updatedAt"]
+    },
+    "AdminInvite": {
+      "title": "AdminInvite",
+      "description": "Authorized admin invite records linked to username and verified email.",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string", "minLength": 2, "maxLength": 60 },
+        "email": { "type": "string", "minLength": 3, "maxLength": 150 },
+        "role": { "type": "string", "enum": ["super_admin", "admin", "editor"] },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["username", "email", "role", "isActive", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/SiteSettings" },
+      "description": "Global site configuration document."
+    },
+    "/schoolInfo/{docId}": {
+      "schema": { "$ref": "#/entities/SchoolInfo" },
+      "description": "About school and headmaster profile sections."
+    },
+    "/sliders/{sliderId}": {
+      "schema": { "$ref": "#/entities/SliderItem" },
+      "description": "Homepage hero slider items."
+    },
+    "/teachers/{teacherId}": {
+      "schema": { "$ref": "#/entities/Teacher" },
+      "description": "Teachers directory records."
+    },
+    "/studentClasses/{classId}": {
+      "schema": { "$ref": "#/entities/StudentClass" },
+      "description": "Class-level student aggregate statistics."
+    },
+    "/students/{studentId}": {
+      "schema": { "$ref": "#/entities/Student" },
+      "description": "Individual student records gated by guardian consent and admin approval."
+    },
+    "/academics/{academicId}": {
+      "schema": { "$ref": "#/entities/AcademicItem" },
+      "description": "Academic curriculum, routines, schedules, and holidays."
+    },
+    "/notices/{noticeId}": {
+      "schema": { "$ref": "#/entities/Notice" },
+      "description": "School notices."
+    },
+    "/results/{resultId}": {
+      "schema": { "$ref": "#/entities/ResultItem" },
+      "description": "Examination results."
+    },
+    "/galleryPhotos/{photoId}": {
+      "schema": { "$ref": "#/entities/GalleryPhoto" },
+      "description": "Photo gallery entries."
+    },
+    "/galleryVideos/{videoId}": {
+      "schema": { "$ref": "#/entities/GalleryVideo" },
+      "description": "Video gallery entries."
+    },
+    "/news/{newsId}": {
+      "schema": { "$ref": "#/entities/NewsItem" },
+      "description": "School news and activity posts."
+    },
+    "/pages/{pageId}": {
+      "schema": { "$ref": "#/entities/CustomPage" },
+      "description": "Custom dynamic pages."
+    },
+    "/menus/{menuId}": {
+      "schema": { "$ref": "#/entities/MenuItem" },
+      "description": "Configurable navigation menus."
+    },
+    "/contactMessages/{messageId}": {
+      "schema": { "$ref": "#/entities/ContactMessage" },
+      "description": "Contact form messages accessible only by verified admins."
+    },
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Admin role assignment records."
+    },
+    "/adminInvites/{inviteId}": {
+      "schema": { "$ref": "#/entities/AdminInvite" },
+      "description": "Pending or active admin invites."
+    }
+  }
+}

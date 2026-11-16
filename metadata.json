@@ -1,0 +1,6 @@
+{
+  "name": "৪৪ নং চরগোলাবাড়ী সরকারি প্রাথমিক বিদ্যালয়",
+  "description": "৪৪ নং চরগোলাবাড়ী সরকারি প্রাথমিক বিদ্যালয়, চরগোলাবাড়ী, মাদারগঞ্জ, জামালপুর-এর অফিসিয়াল ওয়েবসাইট ও অ্যাডমিন পোর্টাল।",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
