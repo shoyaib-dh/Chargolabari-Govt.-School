@@ -10,7 +10,13 @@ import {
   setDoc,
   where,
 } from 'firebase/firestore';
-import { auth, db, handleFirestoreError, testFirestoreConnection } from '../firebase';
+import {
+  auth,
+  db,
+  handleFirestoreError,
+  isTransientFirestoreError,
+  testFirestoreConnection,
+} from '../firebase';
 import {
   AcademicItem,
   AdminInvite,
@@ -116,7 +122,9 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
 
   // Auth listener & Admin RBAC check
   useEffect(() => {
+    let mounted = true;
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
+      if (!mounted) return;
       setUser(currentUser);
       if (!currentUser) {
         setIsAdmin(false);
@@ -128,6 +136,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       try {
         const adminRef = doc(db, 'admins', currentUser.uid);
         const adminSnap = await getDoc(adminRef);
+        if (!mounted) return;
         const isBootstrap =
           currentUser.emailVerified && currentUser.email === BOOTSTRAP_ADMIN_EMAIL;
 
@@ -149,6 +158,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           });
+          if (!mounted) return;
           setAdminProfile({ ...bootstrapProfile, id: currentUser.uid });
           setIsAdmin(true);
         } else {
@@ -156,15 +166,23 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           setIsAdmin(false);
         }
       } catch (err) {
-        console.error('Admin verification check error:', err);
+        if (!mounted) return;
+        if (!isTransientFirestoreError(err)) {
+          console.error('Admin verification check error:', err);
+        }
         setAdminProfile(null);
         setIsAdmin(false);
       } finally {
-        setAuthReady(true);
+        if (mounted) {
+          setAuthReady(true);
+        }
       }
     });
 
-    return () => unsub();
+    return () => {
+      mounted = false;
+      unsub();
+    };
   }, []);
 
   // Public + Role-aware Firestore subscriptions
@@ -172,6 +190,13 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     if (!authReady) return;
 
     const unsubscribers: Array<() => void> = [];
+    const onListenerError = (err: unknown, op: OperationType, path: string) => {
+      setLoading(false);
+      if (isTransientFirestoreError(err)) {
+        return;
+      }
+      handleFirestoreError(err, op, path);
+    };
 
     // 1. Settings
     unsubscribers.push(
@@ -185,10 +210,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           }
           setLoading(false);
         },
-        (err) => {
-          setLoading(false);
-          handleFirestoreError(err, OperationType.GET, 'settings/site');
-        }
+        (err) => onListenerError(err, OperationType.GET, 'settings/site')
       )
     );
 
@@ -203,7 +225,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
             setSchoolInfo(DEFAULT_SCHOOL_INFO);
           }
         },
-        (err) => handleFirestoreError(err, OperationType.GET, 'schoolInfo/about')
+        (err) => onListenerError(err, OperationType.GET, 'schoolInfo/about')
       )
     );
 
@@ -222,7 +244,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
             const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<T, 'id'>) }) as T);
             setter(list.length > 0 ? list : []);
           },
-          (err) => handleFirestoreError(err, OperationType.LIST, colName)
+          (err) => onListenerError(err, OperationType.LIST, colName)
         )
       );
     };
@@ -254,7 +276,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         (snap) => {
           setRawStudents(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Student, 'id'>) })));
         },
-        (err) => handleFirestoreError(err, OperationType.LIST, 'students')
+        (err) => onListenerError(err, OperationType.LIST, 'students')
       )
     );
 
@@ -268,7 +290,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
               snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<ContactMessage, 'id'>) }))
             );
           },
-          (err) => handleFirestoreError(err, OperationType.LIST, 'contactMessages')
+          (err) => onListenerError(err, OperationType.LIST, 'contactMessages')
         )
       );
       unsubscribers.push(
@@ -277,7 +299,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           (snap) => {
             setAdmins(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<AdminUser, 'id'>) })));
           },
-          (err) => handleFirestoreError(err, OperationType.LIST, 'admins')
+          (err) => onListenerError(err, OperationType.LIST, 'admins')
         )
       );
       unsubscribers.push(
@@ -288,7 +310,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
               snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<AdminInvite, 'id'>) }))
             );
           },
-          (err) => handleFirestoreError(err, OperationType.LIST, 'adminInvites')
+          (err) => onListenerError(err, OperationType.LIST, 'adminInvites')
         )
       );
     } else {
