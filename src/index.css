@@ -21,9 +21,32 @@
   font-variant-numeric: tabular-nums;
 }
 
+@keyframes noticeScrollUp {
+  0% {
+    transform: translateY(0%);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+.notice-scroll-track {
+  animation-name: noticeScrollUp;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.notice-scroll-container:hover .notice-scroll-track,
+.notice-scroll-container:focus-within .notice-scroll-track {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+  .notice-scroll-track {
+    animation: none !important;
   }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

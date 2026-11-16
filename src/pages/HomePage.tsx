@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
-  Bell,
   BookOpen,
   Building2,
   Calendar,
@@ -23,6 +22,7 @@ import { SafeImage } from '../components/SafeImage';
 import { AnimatedCounter } from '../components/AnimatedCounter';
 import { TeacherCard } from '../components/TeacherCard';
 import { TeacherModal } from '../components/TeacherModal';
+import { HeroNoticeBoard } from '../components/HeroNoticeBoard';
 import { Teacher } from '../types/school';
 
 const SCHOOL_FEATURES = [
@@ -75,7 +75,8 @@ export function HomePage() {
 
   const activeSliders = sliders.filter((s) => s.isActive);
   const activeTeachers = teachers.filter((t) => t.isActive).slice(0, 4);
-  const activeNotices = notices.filter((n) => n.isActive).slice(0, 5);
+  const allActiveNotices = notices.filter((n) => n.isActive);
+  const activeNotices = allActiveNotices.slice(0, 5);
   const activePhotos = galleryPhotos.filter((p) => p.isActive).slice(0, 6);
   const activeNews = news.filter((n) => n.isActive).slice(0, 3);
 
@@ -115,7 +116,7 @@ export function HomePage() {
 
             <div className="absolute inset-0 flex items-end sm:items-center">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-14 sm:pb-0">
-                <div className="max-w-2xl space-y-4 text-white">
+                <div className="max-w-2xl lg:max-w-xl xl:max-w-2xl lg:pr-8 space-y-4 text-white">
                   <p className="text-xs sm:text-sm font-medium text-amber-300 tracking-wide">
                     {settings.address}
                     {slide.isDemo ? ' · নমুনা স্লাইড' : ''}
@@ -148,6 +149,17 @@ export function HomePage() {
           </div>
         ))}
 
+        {/* Desktop Floating Bottom-Right Live Notice Board (aligned with screenshot placement) */}
+        {allActiveNotices.length > 0 && settings.showNoticesSection !== false && (
+          <div className="hidden lg:block absolute inset-x-0 bottom-5 z-20 pointer-events-none">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end">
+              <div className="pointer-events-auto w-[360px] xl:w-[390px]">
+                <HeroNoticeBoard notices={allActiveNotices} />
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeSliders.length > 1 && (
           <>
             <button
@@ -156,7 +168,7 @@ export function HomePage() {
                 setCurrentSlide((prev) => (prev - 1 + activeSliders.length) % activeSliders.length)
               }
               aria-label="পূর্ববর্তী স্লাইড"
-              className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-slate-950/50 hover:bg-slate-950/80 text-white flex items-center justify-center border border-white/20 transition-colors"
+              className="absolute left-3 sm:left-6 top-1/2 lg:top-[28%] -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-slate-950/50 hover:bg-slate-950/80 text-white flex items-center justify-center border border-white/20 transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -164,11 +176,11 @@ export function HomePage() {
               type="button"
               onClick={() => setCurrentSlide((prev) => (prev + 1) % activeSliders.length)}
               aria-label="পরবর্তী স্লাইড"
-              className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-slate-950/50 hover:bg-slate-950/80 text-white flex items-center justify-center border border-white/20 transition-colors"
+              className="absolute right-3 sm:right-6 top-1/2 lg:top-[28%] -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-slate-950/50 hover:bg-slate-950/80 text-white flex items-center justify-center border border-white/20 transition-colors"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+            <div className="absolute bottom-5 left-1/2 lg:left-8 lg:translate-x-0 -translate-x-1/2 z-20 flex items-center gap-2">
               {activeSliders.map((s, idx) => (
                 <button
                   key={s.id}
@@ -185,20 +197,11 @@ export function HomePage() {
         )}
       </section>
 
-      {/* Notice Announcement Ribbon */}
-      {settings.headerNotice && (
-        <div className="bg-blue-50 border-b border-blue-200/80">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm">
-            <div className="flex items-center gap-2.5 text-blue-950 min-w-0">
-              <Bell className="w-4 h-4 text-amber-600 shrink-0" />
-              <p className="font-medium truncate sm:whitespace-normal">{settings.headerNotice}</p>
-            </div>
-            <Link
-              to="/notices"
-              className="text-xs font-semibold text-blue-900 hover:text-emerald-700 whitespace-nowrap shrink-0 inline-flex items-center gap-1"
-            >
-              সব নোটিশ দেখুন <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+      {/* Mobile/Tablet Prominent Live Notice Board */}
+      {allActiveNotices.length > 0 && settings.showNoticesSection !== false && (
+        <div className="lg:hidden bg-slate-100 border-b border-slate-200 py-5 px-4 sm:px-6">
+          <div className="max-w-2xl mx-auto">
+            <HeroNoticeBoard notices={allActiveNotices} compact />
           </div>
         </div>
       )}
