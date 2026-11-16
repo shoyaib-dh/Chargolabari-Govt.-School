@@ -72,6 +72,7 @@ export function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [paused, setPaused] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
+  const [activeNoticeIdx, setActiveNoticeIdx] = useState(0);
 
   const activeSliders = sliders.filter((s) => s.isActive);
   const activeTeachers = teachers.filter((t) => t.isActive).slice(0, 4);
@@ -79,6 +80,8 @@ export function HomePage() {
   const activeNotices = allActiveNotices.slice(0, 5);
   const activePhotos = galleryPhotos.filter((p) => p.isActive).slice(0, 6);
   const activeNews = news.filter((n) => n.isActive).slice(0, 3);
+  const highlightedNotice =
+    allActiveNotices.length > 0 ? allActiveNotices[activeNoticeIdx % allActiveNotices.length] : null;
 
   useEffect(() => {
     if (activeSliders.length <= 1 || paused) return;
@@ -94,7 +97,7 @@ export function HomePage() {
     <div>
       {/* 1. Hero Full-Width Image Slider */}
       <section
-        className="relative w-full h-[460px] sm:h-[540px] lg:h-[600px] overflow-hidden bg-blue-950"
+        className="relative w-full h-[460px] sm:h-[540px] lg:h-[580px] overflow-hidden bg-blue-950"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
         aria-label="প্রধান স্লাইডার"
@@ -116,7 +119,7 @@ export function HomePage() {
 
             <div className="absolute inset-0 flex items-end sm:items-center">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-14 sm:pb-0">
-                <div className="max-w-2xl lg:max-w-xl xl:max-w-2xl lg:pr-8 space-y-4 text-white">
+                <div className="max-w-2xl space-y-4 text-white">
                   <p className="text-xs sm:text-sm font-medium text-amber-300 tracking-wide">
                     {settings.address}
                     {slide.isDemo ? ' · নমুনা স্লাইড' : ''}
@@ -149,17 +152,6 @@ export function HomePage() {
           </div>
         ))}
 
-        {/* Desktop Floating Bottom-Right Live Notice Board (aligned with screenshot placement) */}
-        {allActiveNotices.length > 0 && settings.showNoticesSection !== false && (
-          <div className="hidden lg:block absolute inset-x-0 bottom-5 z-20 pointer-events-none">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end">
-              <div className="pointer-events-auto w-[360px] xl:w-[390px]">
-                <HeroNoticeBoard notices={allActiveNotices} />
-              </div>
-            </div>
-          </div>
-        )}
-
         {activeSliders.length > 1 && (
           <>
             <button
@@ -168,7 +160,7 @@ export function HomePage() {
                 setCurrentSlide((prev) => (prev - 1 + activeSliders.length) % activeSliders.length)
               }
               aria-label="পূর্ববর্তী স্লাইড"
-              className="absolute left-3 sm:left-6 top-1/2 lg:top-[28%] -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-slate-950/50 hover:bg-slate-950/80 text-white flex items-center justify-center border border-white/20 transition-colors"
+              className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-slate-950/50 hover:bg-slate-950/80 text-white flex items-center justify-center border border-white/20 transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -176,11 +168,11 @@ export function HomePage() {
               type="button"
               onClick={() => setCurrentSlide((prev) => (prev + 1) % activeSliders.length)}
               aria-label="পরবর্তী স্লাইড"
-              className="absolute right-3 sm:right-6 top-1/2 lg:top-[28%] -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-slate-950/50 hover:bg-slate-950/80 text-white flex items-center justify-center border border-white/20 transition-colors"
+              className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-slate-950/50 hover:bg-slate-950/80 text-white flex items-center justify-center border border-white/20 transition-colors"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
-            <div className="absolute bottom-5 left-1/2 lg:left-8 lg:translate-x-0 -translate-x-1/2 z-20 flex items-center gap-2">
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
               {activeSliders.map((s, idx) => (
                 <button
                   key={s.id}
@@ -197,13 +189,74 @@ export function HomePage() {
         )}
       </section>
 
-      {/* Mobile/Tablet Prominent Live Notice Board */}
+      {/* Live Notice Board Section directly below the Hero Image */}
       {allActiveNotices.length > 0 && settings.showNoticesSection !== false && (
-        <div className="lg:hidden bg-slate-100 border-b border-slate-200 py-5 px-4 sm:px-6">
-          <div className="max-w-2xl mx-auto">
-            <HeroNoticeBoard notices={allActiveNotices} compact />
+        <section
+          aria-label="লাইভ নোটিশ বোর্ড"
+          className="bg-gradient-to-b from-blue-50/90 via-slate-50 to-white border-b border-slate-200/90 py-8 sm:py-10"
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
+            {/* Highlighted Notice Spotlight & Quick Access (Left) */}
+            {highlightedNotice && (
+              <div className="lg:col-span-7 bg-white border border-blue-200/80 rounded-2xl p-6 sm:p-7 flex flex-col justify-between space-y-5 order-2 lg:order-1">
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                      গুরুত্বপূর্ণ নোটিশ হাইলাইট
+                    </span>
+                    <span className="text-xs font-medium text-slate-500 tabular-nums">
+                      {highlightedNotice.category} · {highlightedNotice.publishDate}
+                    </span>
+                  </div>
+
+                  <h2 className="font-display font-bold text-xl sm:text-2xl text-blue-950 leading-snug">
+                    {highlightedNotice.title}
+                  </h2>
+
+                  {highlightedNotice.description && (
+                    <p className="text-sm text-slate-600 leading-relaxed line-clamp-3">
+                      {highlightedNotice.description}
+                    </p>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                  <Link
+                    to={`/notices/${highlightedNotice.id}`}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-900 hover:bg-blue-800 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors"
+                  >
+                    <span>বিস্তারিত নোটিশ পড়ুন</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-600">
+                    <Link to="/results" className="hover:text-blue-900 transition-colors">
+                      ফলাফল
+                    </Link>
+                    <span className="text-slate-300">·</span>
+                    <Link to="/academics" className="hover:text-blue-900 transition-colors">
+                      রুটিন ও সিলেবাস
+                    </Link>
+                    <span className="text-slate-300">·</span>
+                    <Link to="/notices" className="text-blue-900 hover:text-emerald-700 transition-colors">
+                      সকল নোটিশ
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Scrolling Notice Board Card (Right) */}
+            <div className="lg:col-span-5 order-1 lg:order-2">
+              <HeroNoticeBoard
+                notices={allActiveNotices}
+                activeIndex={activeNoticeIdx}
+                onActiveIndexChange={setActiveNoticeIdx}
+                className="h-full"
+              />
+            </div>
           </div>
-        </div>
+        </section>
       )}
 
       {/* 2. Welcome Section */}

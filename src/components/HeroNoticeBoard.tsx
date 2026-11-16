@@ -8,23 +8,34 @@ interface HeroNoticeBoardProps {
   notices: Notice[];
   className?: string;
   compact?: boolean;
+  activeIndex?: number;
+  onActiveIndexChange?: (index: number) => void;
 }
 
 export function HeroNoticeBoard({
   notices,
   className = '',
   compact = false,
+  activeIndex,
+  onActiveIndexChange,
 }: HeroNoticeBoardProps) {
   const [isPaused, setIsPaused] = useState(false);
-  const [highlightIndex, setHighlightIndex] = useState(0);
+  const [internalIndex, setInternalIndex] = useState(0);
+
+  const highlightIndex = activeIndex !== undefined ? activeIndex : internalIndex;
 
   useEffect(() => {
     if (notices.length <= 1 || isPaused) return;
     const interval = setInterval(() => {
-      setHighlightIndex((prev) => (prev + 1) % notices.length);
+      const next = (highlightIndex + 1) % notices.length;
+      if (onActiveIndexChange) {
+        onActiveIndexChange(next);
+      } else {
+        setInternalIndex(next);
+      }
     }, 3500);
     return () => clearInterval(interval);
-  }, [notices.length, isPaused]);
+  }, [notices.length, isPaused, highlightIndex, onActiveIndexChange]);
 
   if (notices.length === 0) return null;
 
@@ -37,7 +48,7 @@ export function HeroNoticeBoard({
   return (
     <aside
       aria-label="হোমপেজ লাইভ নোটিশ বোর্ড"
-      className={`rounded-2xl border-2 border-amber-400 bg-white/95 backdrop-blur-md shadow-[0_20px_50px_rgba(15,23,42,0.42)] overflow-hidden flex flex-col ${className}`}
+      className={`rounded-2xl border-2 border-amber-400 bg-white overflow-hidden flex flex-col ${className}`}
     >
       {/* Header Bar */}
       <div className="bg-gradient-to-r from-blue-950 via-blue-900 to-emerald-900 text-white px-4 py-2.5 flex items-center justify-between gap-2">
