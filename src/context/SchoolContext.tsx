@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import {
   collection,
@@ -78,6 +78,7 @@ interface SchoolContextValue {
   contactMessages: ContactMessage[];
   admins: AdminUser[];
   adminInvites: AdminInvite[];
+  refreshAuthSession: () => Promise<void>;
   usingDemoFallback: {
     sliders: boolean;
     teachers: boolean;
@@ -120,25 +121,23 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     void testFirestoreConnection();
   }, []);
 
-  // Auth listener & Admin RBAC check
-  useEffect(() => {
-    let mounted = true;
-    const unsub = onAuthStateChanged(auth, async (currentUser) => {
-      if (!mounted) return;
-      setUser(currentUser);
+  const verifyAdminStatus = useCallback(
+    async (currentUser: User | null, isMounted?: () => boolean) => {
+      const stillMounted = () => (isMounted ? isMounted() : true);
       if (!currentUser) {
+        if (!stillMounted()) return;
         setIsAdmin(false);
         setAdminProfile(null);
-        setAuthReady(true);
         return;
       }
 
       try {
         const adminRef = doc(db, 'admins', currentUser.uid);
         const adminSnap = await getDoc(adminRef);
-        if (!mounted) return;
+        if (!stillMounted()) return;
+        const normalizedEmail = (currentUser.email || '').toLowerCase();
         const isBootstrap =
-          currentUser.emailVerified && currentUser.email === BOOTSTRAP_ADMIN_EMAIL;
+          Boolean(currentUser.emailVerified) && normalizedEmail === BOOTSTRAP_ADMIN_EMAIL;
 
         if (adminSnap.exists()) {
           const data = adminSnap.data() as AdminUser;
@@ -153,12 +152,18 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
             role: 'super_admin',
             isActive: true,
           };
-          await setDoc(adminRef, {
-            ...bootstrapProfile,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          });
-          if (!mounted) return;
+          try {
+            await setDoc(adminRef, {
+              ...bootstrapProfile,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            });
+          } catch (writeErr) {
+            if (!isTransientFirestoreError(writeErr)) {
+              console.warn('Bootstrap admin profile sync warning:', writeErr);
+            }
+          }
+          if (!stillMounted()) return;
           setAdminProfile({ ...bootstrapProfile, id: currentUser.uid });
           setIsAdmin(true);
         } else {
@@ -166,16 +171,40 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           setIsAdmin(false);
         }
       } catch (err) {
-        if (!mounted) return;
+        if (!stillMounted()) return;
         if (!isTransientFirestoreError(err)) {
           console.error('Admin verification check error:', err);
         }
         setAdminProfile(null);
         setIsAdmin(false);
-      } finally {
-        if (mounted) {
-          setAuthReady(true);
-        }
+      }
+    },
+    []
+  );
+
+  const refreshAuthSession = useCallback(async () => {
+    const current = auth.currentUser;
+    if (!current) {
+      setUser(null);
+      setIsAdmin(false);
+      setAdminProfile(null);
+      return;
+    }
+    await current.reload();
+    await current.getIdToken(true);
+    setUser(auth.currentUser);
+    await verifyAdminStatus(auth.currentUser);
+  }, [verifyAdminStatus]);
+
+  // Auth listener & Admin RBAC check
+  useEffect(() => {
+    let mounted = true;
+    const unsub = onAuthStateChanged(auth, async (currentUser) => {
+      if (!mounted) return;
+      setUser(currentUser);
+      await verifyAdminStatus(currentUser, () => mounted);
+      if (mounted) {
+        setAuthReady(true);
       }
     });
 
@@ -183,7 +212,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       unsub();
     };
-  }, []);
+  }, [verifyAdminStatus]);
 
   // Public + Role-aware Firestore subscriptions
   useEffect(() => {
@@ -393,6 +422,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     contactMessages,
     admins,
     adminInvites,
+    refreshAuthSession,
     usingDemoFallback: {
       sliders: !rawSliders || rawSliders.length === 0,
       teachers: !rawTeachers || rawTeachers.length === 0,
